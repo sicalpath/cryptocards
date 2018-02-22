@@ -8,6 +8,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Card;
 use App\Models\Listing;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Request;
 
 class MarketplaceController extends Controller
@@ -50,6 +51,29 @@ class MarketplaceController extends Controller
         }
 
         $card->save();
+
+        return $this->getCardDetail($card_id);
+    }
+
+    public function putTransaction($card_id)
+    {
+        //update card user's id with current id
+        $user = auth()->user();
+        $card = Card::find($card_id);
+        if ($card->isUserOwner($user)) {
+            return response()->build(self::RESPONSE_MESSAGE_ERROR_UNAUTHORIZED, 'User does not own the card');
+        }
+
+        $data = json_decode(Request::getContent(), true);
+        $card->user_id = $user->id;
+
+        $card->save();
+
+        $transaction = new Transaction();
+        $transaction->card_id = $card_id;
+        $transaction->user_id = $user->id;
+
+        $transaction->save();
 
         return $this->getCardDetail($card_id);
     }
